@@ -1,34 +1,62 @@
-# .github/workflows/ci.yml
 name: CI
+
 on:
   pull_request:
+    branches: [main]
   push:
     branches: [main]
 
+# A new push to the same PR cancels the run that is still going.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  # actions/checkout only creates remote branches (origin/main), not a local
+  # "main". Without this, Turbo can't find the base for --affected and
+  # silently runs every package. On a push to main, compare with the
+  # previous tip of main.
+  TURBO_SCM_BASE: ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || github.event.before }}
+
 jobs:
-  lint:
+  # lint, check-types, test and build run in parallel. Each one runs only in
+  # the packages this change affects, plus the packages that depend on them.
+  checks:
+    name: ${{ matrix.task }}
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        task: [lint, check-types, test, build]
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: 20, cache: npm }
-      - run: npm ci
-      - run: npm run lint
+      - name: Check out code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # --affected needs history; a shallow clone marks everything changed
 
-  typecheck:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: 20, cache: npm }
-      - run: npm ci
-      - run: npx tsc --noEmit
+      - name: Setup
+        uses: ./.github/actions/setup
+        with:
+          task: ${{ matrix.task }}
 
-  test:
+      - name: Run ${{ matrix.task }} on affected packages
+        run: pnpm turbo run ${{ matrix.task }} --affected
+
+  # The single check the "Protect main" branch rule requires. It passes only
+  # when every job above passed, so new jobs don't need a ruleset change.
+  ci:
+    name: Lint, types, test, build
+    if: always()
+    needs: [checks]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: 20, cache: npm }
-      - run: npm ci
-      - run: npm test
+      - name: Fail if any check failed or was cancelled
+        if: needs.checks.result != 'success'
+        run: |
+          echo "checks result: ${{ needs.checks.result }}"
+          exit 1
+      - run: echo "All checks passed"

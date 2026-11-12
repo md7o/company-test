@@ -1,0 +1,30 @@
+name: Setup
+description: Install pnpm, Node.js and dependencies, and restore the Turborepo cache.
+
+inputs:
+  task:
+    description: Turbo task name, used to keep each job's cache separate.
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Set up pnpm
+      uses: pnpm/action-setup@v4 # version comes from "packageManager" in package.json
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 22
+        cache: pnpm
+
+    - name: Restore Turborepo cache
+      uses: actions/cache@v4
+      with:
+        path: .turbo/cache
+        key: turbo-${{ runner.os }}-${{ inputs.task }}-${{ github.sha }}
+        restore-keys: turbo-${{ runner.os }}-${{ inputs.task }}-
+
+    - name: Install dependencies
+      shell: bash
+      run: pnpm install --frozen-lockfile
