@@ -51,3 +51,9 @@ jobs:
       # and keloo; editing only apps/admin checks just admin.
       - name: Lint, type-check, test and build affected packages
         run: pnpm turbo run lint check-types test build --affected
+        env:
+          # actions/checkout only creates remote branches (origin/main), not a
+          # local "main". Without this, Turbo can't find the base and silently
+          # runs every package. On a push to main, compare with the previous
+          # tip of main.
+          TURBO_SCM_BASE: ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || github.event.before }}
