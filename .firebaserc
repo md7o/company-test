@@ -1,0 +1,7 @@
+{
+  "projects": {
+    "default": "test-dev-81a69",
+    "dev": "test-dev-81a69",
+    "prod": "test-prod-ea6f4"
+  }
+}

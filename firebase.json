@@ -1,0 +1,19 @@
+{
+  "firestore": {
+    "rules": "firebase/firestore.rules",
+    "indexes": "firebase/firestore.indexes.json"
+  },
+  "functions": [
+    {
+      "source": "services/kalee",
+      "codebase": "kalee",
+      "predeploy": ["pnpm --filter @repo/functions-kalee build"]
+    }
+  ],
+  "emulators": {
+    "auth": { "port": 9099 },
+    "firestore": { "port": 8080 },
+    "functions": { "port": 5001 },
+    "ui": { "enabled": true, "port": 4000 }
+  }
+}
