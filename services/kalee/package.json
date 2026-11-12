@@ -1,13 +1,15 @@
 {
   "name": "@repo/functions-kalee",
   "private": true,
-  "main": "lib/index.js",
+  "main": "dist/index.js",
   "engines": {
     "node": "22"
   },
   "scripts": {
     "build": "tsup",
-    "dev": "tsup --watch"
+    "dev": "tsup --watch",
+    "test": "vitest run",
+    "test:watch": "vitest"
   },
   "dependencies": {
     "firebase-admin": "^14.5.0",
@@ -17,6 +19,7 @@
     "@repo/contracts": "workspace:*",
     "@repo/typescript-config": "workspace:*",
     "tsup": "^9.0.0",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.0"
   }
 }

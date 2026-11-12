@@ -7,6 +7,11 @@
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:*",
-    "typescript": "7.0.2"
+    "typescript": "7.0.2",
+    "vitest": "^5.1.0"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest"
   }
 }

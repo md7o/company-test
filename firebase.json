@@ -5,7 +5,7 @@
   },
   "functions": [
     {
-      "source": "services/kalee",
+      "source": "services/kalee/dist",
       "codebase": "kalee",
       "predeploy": ["pnpm --filter @repo/functions-kalee build"]
     }
