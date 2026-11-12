@@ -22,16 +22,26 @@ env:
   TURBO_SCM_BASE: ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || github.event.before }}
 
 jobs:
-  # lint, check-types, test and build run in parallel. Each one runs only in
+  # Lint, type check, test and build run in parallel. Each one runs only in
   # the packages this change affects, plus the packages that depend on them.
+  # The "Protect main" branch rule requires each of these four checks by
+  # name, so renaming a job also means updating the ruleset.
   checks:
-    name: ${{ matrix.task }}
+    name: ${{ matrix.name }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
-        task: [lint, check-types, test, build]
+        include:
+          - name: Lint
+            task: lint
+          - name: Type check
+            task: check-types
+          - name: Unit tests
+            task: test
+          - name: Build
+            task: build
     steps:
       - name: Check out code
         uses: actions/checkout@v4
@@ -45,18 +55,3 @@ jobs:
 
       - name: Run ${{ matrix.task }} on affected packages
         run: pnpm turbo run ${{ matrix.task }} --affected
-
-  # The single check the "Protect main" branch rule requires. It passes only
-  # when every job above passed, so new jobs don't need a ruleset change.
-  ci:
-    name: Lint, types, test, build
-    if: always()
-    needs: [checks]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Fail if any check failed or was cancelled
-        if: needs.checks.result != 'success'
-        run: |
-          echo "checks result: ${{ needs.checks.result }}"
-          exit 1
-      - run: echo "All checks passed"
