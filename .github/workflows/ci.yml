@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# A new push to the same PR cancels the run that is still going.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  # actions/checkout only creates remote branches (origin/main), not a local
+  # "main". Without this, Turbo can't find the base for --affected and
+  # silently runs every package. On a push to main, compare with the
+  # previous tip of main.
+  TURBO_SCM_BASE: ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || github.event.before }}
+
+jobs:
+  # Lint, type check, test and build run in parallel. Each one runs only in
+  # the packages this change affects, plus the packages that depend on them.
+  # The "Protect main" branch rule requires each of these four checks by
+  # name, so renaming a job also means updating the ruleset.
+  checks:
+    name: ${{ matrix.name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Lint
+            task: lint
+          - name: Type check
+            task: check-types
+          - name: Unit tests
+            task: test
+          - name: Build
+            task: build
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # --affected needs history; a shallow clone marks everything changed
+
+      - name: Setup
+        uses: ./.github/actions/setup
+        with:
+          task: ${{ matrix.task }}
+
+      - name: Run ${{ matrix.task }} on affected packages
+        run: pnpm turbo run ${{ matrix.task }} --affected

@@ -6,6 +6,7 @@
 import '@/global.css';
 
 import { Platform } from 'react-native';
+import { colors } from '@repo/tokens';
 
 export const Colors = {
   light: {
@@ -17,7 +18,7 @@ export const Colors = {
   },
   dark: {
     text: '#ffffff',
-    background: '#000000',
+    background: colors.background,
     backgroundElement: '#212225',
     backgroundSelected: '#2E3135',
     textSecondary: '#B0B4BA',
